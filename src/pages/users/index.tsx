@@ -5,6 +5,7 @@ import {
   Flex,
   Heading,
   Icon,
+  Spinner,
   Table,
   Tbody,
   Td,
@@ -15,16 +16,22 @@ import {
   useBreakpointValue,
 } from "@chakra-ui/react";
 import Link from "next/link";
+import { useState } from "react";
 import { RiAddLine, RiPencilLine } from "react-icons/ri";
 import { Header } from "../../components/Header";
 import { Pagination } from "../../components/Pagination";
 import { SideBar } from "../../components/SideBar";
+import { useUsers } from "../../services/hooks/useUsers";
 
 export default function UserList() {
+  const [currentPage, setCurrentPage] = useState(1);
+  const { data, isLoading, error, isFetching } = useUsers(currentPage);
+
   const isWideVersion = useBreakpointValue({
     base: false,
     lg: true,
   });
+
   return (
     <Box>
       <Header />
@@ -32,66 +39,86 @@ export default function UserList() {
         <SideBar />
 
         <Box flex="1" borderRadius={8} bg="gray.800" p="8">
-          <Flex mb="8" justify="space-between" align="center">
-            <Heading size="lg" fontWeight="normal">
-              Usuarios
-            </Heading>
-            <Link href="users/create" passHref>
-              <Button
-                as="a"
-                size="sm"
-                fontSize="sm"
-                colorScheme="pink"
-                leftIcon={<Icon as={RiAddLine} fontSize="20" />}
-              >
-                Criar novo
-              </Button>
-            </Link>
-          </Flex>
+          {isLoading ? (
+            <Flex justify="center">
+              <Spinner />
+            </Flex>
+          ) : error ? (
+            <Flex justify="center">Error</Flex>
+          ) : (
+            <>
+              <Flex mb="8" justify="space-between" align="center">
+                <Heading size="lg" fontWeight="normal">
+                  Usuarios{" "}
+                  {!isLoading && isFetching && (
+                    <Spinner size="sm" color="gray.500" ml="4" />
+                  )}
+                </Heading>
+                <Link href="users/create" passHref>
+                  <Button
+                    as="a"
+                    size="sm"
+                    fontSize="sm"
+                    colorScheme="pink"
+                    leftIcon={<Icon as={RiAddLine} fontSize="20" />}
+                  >
+                    Criar novo
+                  </Button>
+                </Link>
+              </Flex>
 
-          <Table colorScheme="whiteAlpha">
-            <Thead>
-              <Tr>
-                <Th px={["4", "4", "6"]} color="gray.300" width="8">
-                  <Checkbox colorScheme="pink" />
-                </Th>
-                <Th>Usuario</Th>
-                {isWideVersion && <Th>Data de Cadastro</Th>}
-                {isWideVersion && <Th width="8"></Th>}
-              </Tr>
-            </Thead>
-            <Tbody>
-              <Tr>
-                <Td px={["4", "4", "6"]}>
-                  <Checkbox colorScheme="pink" />
-                </Td>
-                <Td>
-                  <Box>
-                    <Text fontWeight="bold">Ian de Aquino</Text>
-                    <Text fontSize="sm" color="gray.300">
-                      ian.aquino2003@gmail.com
-                    </Text>
-                  </Box>
-                </Td>
-                {isWideVersion && <Td>19 de Maio 2022</Td>}
-                {isWideVersion && (
-                  <Td>
-                    <Button
-                      as="a"
-                      size="sm"
-                      fontSize="sm"
-                      colorScheme="purple"
-                      leftIcon={<Icon as={RiPencilLine} fontSize="16" />}
-                    >
-                      Editar
-                    </Button>
-                  </Td>
-                )}
-              </Tr>
-            </Tbody>
-          </Table>
+              <Table colorScheme="whiteAlpha">
+                <Thead>
+                  <Tr>
+                    <Th px={["4", "4", "6"]} color="gray.300" width="8">
+                      <Checkbox colorScheme="pink" />
+                    </Th>
+                    <Th>Usuario</Th>
+                    {isWideVersion && <Th>Data de Cadastro</Th>}
+                    {isWideVersion && <Th width="8"></Th>}
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {data.users.map((user) => (
+                    <Tr key={user.id}>
+                      <Td px={["4", "4", "6"]}>
+                        <Checkbox colorScheme="pink" />
+                      </Td>
+                      <Td>
+                        <Box>
+                          <Text fontWeight="bold">{user.name}</Text>
+                          <Text fontSize="sm" color="gray.300">
+                            {user.email}
+                          </Text>
+                        </Box>
+                      </Td>
+                      {isWideVersion && <Td>{user.createdAt}</Td>}
+                      {isWideVersion && (
+                        <Td>
+                          <Button
+                            as="a"
+                            size="sm"
+                            fontSize="sm"
+                            colorScheme="purple"
+                            leftIcon={<Icon as={RiPencilLine} fontSize="16" />}
+                          >
+                            Editar
+                          </Button>
+                        </Td>
+                      )}
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
 
-          <Pagination />
+              <Pagination
+                totalCountOfRegister={data.totalCount}
+                registerPerPage={10}
+                currentPage={currentPage}
+                onPageChange={setCurrentPage}
+              />
+            </>
+          )}
         </Box>
       </Flex>
     </Box>
